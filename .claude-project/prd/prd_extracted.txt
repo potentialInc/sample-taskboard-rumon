@@ -1,0 +1,733 @@
+--- PAGE 1 ---
+TaskBoard PRD (2026-02-09)
+Part 1: Basic Information
+Title
+TaskBoard
+Terminology
+Term Definition
+Board A Kanban-style project workspace containing columns and task cards
+Column A vertical list on the board representing a task status (e.g., To Do, In Progress, Done)
+Card A task item displayed on the board that can be dragged between columns
+Label A color-coded tag attached to tasks for categorization (e.g., Bug, Feature, Design)
+Assignee The team member responsible for completing a task
+WIP Limit Work In Progress limit - maximum number of cards allowed in a column
+Swimlane A horizontal division on the board for grouping cards by category or assignee
+Backlog A holding area for tasks that are planned but not yet moved to the active board
+Blocker A task dependency or issue preventing progress on the current task
+Sprint An optional time-boxed period for organizing tasks (not enforced)
+Project Information
+Description
+TaskBoard is a lightweight, mobile-first project management platform centered around Kanban boards. It
+enables project owners to organize work visually, assign tasks to team members, and track progress in real-
+time. The platform focuses on simplicity and real-time collaboration without the complexity of traditional
+enterprise PM tools.
+Goals
+1. Provide a simple, intuitive Kanban board experience with real-time synchronization across all users
+2. Enable project owners to track team progress through automated dashboards and completion
+metrics
+3. Facilitate team collaboration through task comments, file attachments, and notification-driven
+workflows
+User Types
+Project Owner: Creates and manages projects, builds Kanban boards, creates and assigns tasks,
+invites team members, monitors project progress via dashboard
+
+--- PAGE 2 ---
+Team Member: Views assigned tasks, creates tasks, updates task status by dragging cards, adds
+comments and file attachments, creates sub-tasks, logs time on tasks, receives notifications for
+assignments and deadlines
+Admin: Manages all users and projects, monitors system usage analytics, configures system
+settings
+User Relationships
+Project Owner → Projects: 1:N (one owner manages multiple projects)
+Project Owner → Team Members: 1:N (one owner invites multiple members per project)
+Team Member → Projects: N:M (one member belongs to multiple projects)
+Team Member → Tasks: 1:N (one member is assigned multiple tasks)
+Project Type
+Mobile App (React Native) - Project Owner & Team Member
+Web App (React Webview) - Alternative access for Project Owner & Team Member
+Admin Dashboard (React) - Admin management interface
+Backend API (NestJS / Django) - Team member chooses based on their stack
+System Modules (Step-by-step Flows)
+Module 1 - Project Creation (Project Owner)
+1. Project Owner taps "New Project" button
+2. Owner enters project title, description, and deadline
+3. Owner selects Kanban template (Default: To Do, In Progress, Review, Done) or creates custom
+columns
+4. System creates the project with the selected board template
+5. Owner invites team members via email
+6. Team members receive invitation notification and join the project
+7. Project appears in both owner's and members' project list
+Module 2 - Task Management (Project Owner / Team Member)
+1. User opens a project board
+2. Any user (Owner or Member) creates a new task card in a column by tapping "+" button
+3. User fills in task details: title, description, assignee, priority (Low/Medium/High/Urgent), due date,
+labels
+4. User can add sub-tasks (checklist items) within the task
+5. Assigned team member receives push notification
+6. Team member drags task card between columns to update status
+7. System updates task status in real-time via WebSocket and notifies relevant users
+8. Users can add threaded comments, file attachments, and log time spent on the task
+Module 3 - Kanban Board Real-Time Interaction
+1. User opens project board
+2. Board displays columns with task cards sorted by priority
+3. User drags a card from one column to another
+4. System broadcasts the change to all connected users via WebSocket
+5. All users viewing the board see the change instantly without refresh
+6. If a column has a WIP limit and it's reached, system shows a warning before allowing the move
+7. Board auto-saves all changes
+
+--- PAGE 3 ---
+Module 4 - Progress Tracking (Project Owner)
+1. Owner opens project dashboard
+2. System displays overall completion percentage (Done tasks / Total tasks)
+3. Dashboard shows: overdue tasks count, tasks per status bar chart, member workload distribution,
+total time logged
+4. Owner can filter by date range, assignee, or priority
+5. Owner can export project report as CSV
+Module 5 - Calendar View (All App Users)
+1. User navigates to Calendar View (toggle on Board View header)
+2. System displays a monthly calendar with task cards placed on their due dates
+3. Tasks are color-coded by priority
+4. User can tap a date to see all tasks due that day
+5. User can tap a task to open Task Detail Page
+6. User can drag tasks to different dates to change due dates (Owner only)
+7. Week/Month toggle for different views
+3rd Party API List
+Google OAuth: Social login authentication for user signup/login
+SendGrid: Email notifications for invitations, deadline reminders, and daily digest
+AWS S3: File attachment storage for documents and images uploaded to tasks
+Part 2: User Application PRD
+User Types: Project Owner, Team Member
+1. Common
+Splash Page
+Design: TaskBoard logo with Professional Blue (#4A90D9) background
+Auto-login check: If valid token exists, redirect to main screen
+If no valid token, redirect to Login Page
+Login Page
+Input:
+Email address (text input)
+Password (password input, with show/hide toggle)
+Social Login Buttons:
+"Continue with Google" (Google OAuth)
+Next Action:
+Validate email format and password is not empty
+On success: Redirect to Projects List (Home)
+On failure: Display error message ("Invalid email or password")
+"Forgot Password?" link → Forgot Password Page
+"Don't have an account? Sign Up" link → Sign Up Page
+
+--- PAGE 4 ---
+Forgot Password Page
+Main
+Input: Email address
+Action: "Send Reset Link" button
+System sends password reset email via SendGrid
+Success message: "Password reset link sent to your email"
+Reset Password Page (accessed via email link)
+Input: New password, Confirm new password
+Validation: Minimum 8 characters, must match
+On success: "Password reset successfully" → Redirect to Login Page
+Sign Up Page
+Input:
+Full name (required)
+Email address (required)
+Password (required, min 8 characters)
+Confirm password (required)
+Job title (optional)
+Profile photo (optional)
+Rules:
+Email must be unique in system
+Email verification required (verification link sent via SendGrid)
+Terms of Service and Privacy Policy agreement checkbox (required)
+Invitation Flow:
+Users invited via email link get auto-filled email and simplified signup (name + password
+only)
+2. Project Owner
+2.1 Navigation Menu
+1. Projects (Home)
+2. My Tasks
+3. Notifications
+4. Profile
+2.2 Page Architecture & Feature Specification
+1. Projects Tab (Home)
+Main Page (Project List)
+1. Project List
+Grid/List toggle view
+Each project card shows:
+Project title
+Progress bar (completion %)
+Member count (avatar stack)
+Deadline date
+
+--- PAGE 5 ---
+Task count (total / completed)
+Tap card → Board View Page
+2. Floating Action Button
+"+" button → Project Creation Page
+3. Search & Filter
+Search by project name
+Filter: All / Active / Completed / Archived
+Sort: Recent / Deadline / Name
+Project Creation Page
+1. Project Details
+Title (required)
+Description (optional, rich text)
+Deadline (date picker)
+2. Board Template Selection
+Default Template: To Do → In Progress → Review → Done
+Minimal Template: To Do → Done
+Custom: Create your own columns
+Each column can have an optional WIP limit
+3. Team Invitation
+"Invite Members" section
+Email input with "Add" button (multiple emails)
+Or share invitation link
+"Create Project" button
+Board View Page
+1. Board Header
+Project title
+Member avatars (tap to see full list)
+View toggle: Board View / Calendar View
+Settings icon (gear) → Board Settings
+Dashboard icon → Project Dashboard
+Progress percentage badge
+2. Kanban Board
+Horizontal scrollable columns
+Each column:
+Column title with task count
+WIP limit indicator (if set): "3/5" style
+"+" button to add new card
+Vertically scrollable task cards
+Each card:
+Task title
+
+--- PAGE 6 ---
+Priority badge (color-coded: Low=gray, Medium=blue, High=orange, Urgent=red)
+Assignee avatar
+Due date (red if overdue)
+Label tags (color dots)
+Comment count icon
+Attachment count icon
+Drag-and-drop cards between columns
+Real-time sync via WebSocket
+3. Tap Card → Task Detail Page
+Task Detail Page
+1. Task Header
+Title (editable by Owner)
+Status badge (current column name)
+Priority selector (Low/Medium/High/Urgent)
+Close button
+2. Task Body
+Description (rich text, editable by Owner)
+Assignee (dropdown of project members, editable by Owner)
+Due date (date picker, editable by Owner)
+Labels (multi-select from predefined labels)
+Bug (red), Feature (green), Design (purple), Documentation (blue), Improvement
+(orange)
+3. Sub-Tasks Section
+Checklist of sub-task items with checkboxes
+Progress indicator: "3/5 completed"
+"Add Sub-Task" button → text input for sub-task title
+Tap checkbox to toggle complete/incomplete
+Swipe to delete sub-task
+Sub-task completion contributes to parent task progress
+4. Time Tracking Section
+"Start Timer" button → Starts counting time on this task
+Running timer displays elapsed time (HH:MM:SS)
+"Stop Timer" button → Logs the time entry
+"Add Manual Entry" → Input hours and minutes with description
+Time log list: Date, Duration, User, Description
+Total time logged on this task
+5. Attachments Section
+File list with name, size, upload date
+"Upload File" button (PDF, PNG, JPG, DOCX, XLSX - max 10MB)
+Tap to preview/download
+6. Comments Section
+Threaded comment list with timestamps
+
+--- PAGE 7 ---
+Each comment: Author avatar, name, timestamp, text
+Supports @mention (triggers notification)
+Reply to comment (nested thread)
+Text input with "Send" button
+7. Activity Log
+Chronological list of changes: status changes, assignee changes, comment additions, time
+entries
+Format: "[User] moved this task to [Column]" with timestamp
+8. Actions (Owner only)
+"Move to Trash" button (soft delete with confirmation dialog)
+Trashed tasks are hidden from board but recoverable for 30 days
+"Restore" option available in Trash view
+Permanent deletion occurs automatically after 30 days
+Trash View Page
+Access via "Trash" icon on Board View header or Board Settings
+List of soft-deleted tasks with: Title, Deleted by, Deleted date
+"Restore" button per task → Moves task back to its original column
+"Delete Permanently" button per task (Owner only, with confirmation)
+Tasks auto-permanently-delete after 30 days
+Empty state: "No deleted tasks"
+Board Settings Page
+Edit project title and description
+Edit deadline
+Manage columns: Add, rename, reorder, delete, set WIP limits
+Manage members: View list, remove member, resend invitation
+"Trash" link → Trash View Page
+"Archive Project" button
+"Delete Project" button (with confirmation)
+Project Dashboard Page
+Access via icon on Board View header
+1. Summary Cards
+Total tasks
+Completed tasks
+Overdue tasks
+Completion percentage
+2. Charts
+Tasks per status (bar chart)
+Tasks per priority (pie chart)
+Member workload (horizontal bar chart - tasks per member)
+Completion trend (line chart - completed tasks over time)
+3. Filter
+
+--- PAGE 8 ---
+Date range picker
+Filter by assignee
+Filter by priority
+4. Export
+"Export CSV" button → Downloads project report
+2. My Tasks Tab
+Main Page
+1. Task List
+All tasks assigned to the user across all projects
+Grouped by project name
+Each task: Title, project name, status badge, priority badge, due date
+Overdue tasks highlighted in red
+Tap task → Task Detail Page
+2. Filter & Sort
+Filter by: All / Overdue / Due Today / Due This Week
+Sort by: Due date / Priority / Project
+3. Notifications Tab
+Main Page
+Chronological list of notifications
+Types:
+Task assigned: "[Owner] assigned you to [Task] in [Project]"
+Due date reminder: "[Task] is due tomorrow"
+Status change: "[User] moved [Task] to [Column]"
+Comment mention: "[User] mentioned you in [Task]"
+New comment: "[User] commented on [Task]"
+Invitation: "You've been invited to [Project]"
+Tap notification → Navigate to related task/project
+Swipe to dismiss
+"Mark All as Read" button
+4. Profile Tab
+Main Page
+1. Account Info
+Profile photo, Full name, Email, Job title
+"Edit Profile" button → Edit Profile Page
+2. Settings
+Notification preferences:
+Push notifications on/off
+Email digest: Off / Daily / Weekly
+Per-type toggles (assignments, deadlines, comments, status changes)
+App version
+
+--- PAGE 9 ---
+"Log Out" button
+"Delete Account" button (with confirmation)
+Edit Profile Page
+Editable: Full name, Job title, Profile photo
+Email change requires re-verification
+"Save Changes" button
+3. Team Member
+3.1 Navigation Menu
+1. Projects (Home)
+2. My Tasks
+3. Notifications
+4. Profile
+3.2 Page Architecture & Feature Specification
+Team Member has the same navigation structure as Project Owner with the following permission differences:
+Permission Differences from Project Owner
+Feature Project Owner Team Member
+Create project Yes No
+Edit project settings Yes No
+Create tasks Yes Yes
+Edit task details (title, description, assignee, priority, due date) Yes Own tasks only
+Delete tasks (soft delete) Yes No
+Restore deleted tasks Yes No
+Manage columns (add/edit/delete) Yes No
+Invite/remove members Yes No
+Archive/delete project Yes No
+Drag cards between columns Yes Yes
+Add/manage sub-tasks Yes Yes
+Log time on tasks Yes Yes
+Add comments Yes Yes
+Upload file attachments Yes Yes
+View board, calendar, and dashboard Yes Yes
+Change due dates via Calendar drag Yes No
+
+--- PAGE 10 ---
+Export CSV Yes No
+Team Member Specific Views
+Projects Tab (Home)
+Same project list view but without "+" button (cannot create projects)
+Only shows projects the member has been invited to
+Board View Page
+Same Kanban board with:
+"+" button on columns to create tasks (same as Owner)
+Can drag cards between columns (update status)
+View toggle: Board View / Calendar View (same as Owner)
+Tap card → Task Detail Page (can edit own tasks' details, can add comments, attachments,
+sub-tasks, and time entries on any task)
+Calendar View Page
+Same calendar view as Owner but:
+Cannot drag tasks to change due dates (read-only calendar)
+Can tap tasks to view Task Detail Page
+My Tasks Tab
+Same as Project Owner's My Tasks view
+Shows all tasks assigned to this member
+Part 3: Admin Dashboard PRD
+Admin Dashboard Standard Features
+All admin dashboard pages include the following standard features unless otherwise specified.
+List Page Standard Features
+Feature Description Required
+Search Keyword search field (name, ID, email, etc.) Yes
+Filters Status / Date / Category dropdown filters Yes
+Column Sorting Click table header to sort ASC/DESC Yes
+Checkbox Selection Row checkboxes + Select All checkbox Yes
+Bulk Actions Bulk delete / Status change / Export for selected items Yes
+Pagination Page navigation + Items per page selector (10/25/50/100) Yes
+Table UI Standard Features
+
+--- PAGE 11 ---
+Feature Description Required
+Loading State Skeleton or spinner while data loads Yes
+Empty State Message displayed when no data exists Yes
+Action Column Edit / Delete / View Detail buttons per row Yes
+Detail/Edit Standard Features
+Feature Description Required
+Detail Drawer/Modal Click row to open detail panel Yes
+Edit Form Switch to edit mode within detail view Yes
+Delete Confirmation Confirmation dialog before deletion Yes
+Data Export Standard Features
+Feature Description Required
+CSV/Excel Download Export current filtered/searched results Yes
+Date Range Selection Period filter for export Yes
+Common UI/UX Standard Features
+Feature Description Required
+Toast Notifications Success/Error feedback messages Yes
+Breadcrumb Current location navigation Yes
+Sidebar Navigation
+1. Dashboard
+2. User Management
+3. Project Management
+4. System Configuration
+Page Architecture & Feature Specification
+Dashboard Home Page
+Statistics Cards
+Total Users (with new this week)
+Total Projects (active count)
+Total Tasks (completed this week)
+Active Users Today
+Period Filter
+
+--- PAGE 12 ---
+Today / Last 7 days / Last 30 days / Custom date range
+Charts
+User Registration Trend: Line chart over selected period
+Project Creation Trend: Bar chart
+Task Completion Rate: Line chart (completed per day)
+Top 5 Most Active Projects: Horizontal bar chart
+Recent Activity
+Latest 10 system events (user signups, project creations, etc.)
+User Management
+User Management Page
+Main Page
+1. Top Area:
+Search: Keyword search by name, email
+Filters: Role (Project Owner / Team Member), Status (Active / Suspended), Registration date
+range
+"Create User" button → Creation Modal
+Bulk Action dropdown: Activate / Suspend / Delete / Export CSV
+2. Table Component:
+Checkbox column (with Select All)
+Name, Email, Role, Status, Projects Count, Tasks Count, Registration Date, Last Active
+Action column: View / Edit / Suspend / Delete
+3. Table Features:
+Column sorting (click header)
+Pagination with items per page selector
+Creation Modal
+Input fields: Full name, Email, Role (Project Owner / Team Member)
+Create button / Cancel button
+System sends invitation email
+Detail Drawer
+Header Info: Profile photo, Name, Email, Role, Status, Registration date
+Account Actions: Activate / Suspend, Reset password, Change role
+Projects: List of projects this user belongs to (with role in each)
+Tasks: Recent tasks assigned or created
+Activity: Last login, Total logins, Tasks completed
+Timestamps: Created at / Last active
+Project Management
+
+--- PAGE 13 ---
+Project Management Page
+Main Page
+1. Top Area:
+Search: Project name, owner name
+Filters: Status (Active / Completed / Archived), Date range, Member count range
+Bulk Action dropdown: Archive / Delete / Export CSV
+2. Table Component:
+Checkbox column (with Select All)
+Project Name, Owner Name, Status, Members Count, Total Tasks, Completed Tasks,
+Completion %, Created Date, Deadline
+Action column: View / Archive / Delete
+3. Table Features:
+Column sorting
+Pagination
+Detail Drawer
+Project Info: Title, Description, Deadline, Status, Completion %
+Owner Info: Name, Email (link to user profile)
+Members List: All members with role
+Task Summary: Total, Per status breakdown, Overdue count
+Activity: Recent task movements, comments
+Actions: Archive project, Delete project (with confirmation)
+System Configuration
+System Settings Page
+General Settings
+App name display
+Default Kanban template columns (configurable)
+Maximum file upload size (default: 10MB)
+Allowed file types
+Notification Settings
+Email notification enabled/disabled (global toggle)
+Default email digest frequency
+Deadline reminder timing (default: 24 hours before)
+Label Configuration
+Manage predefined labels:
+Bug (red), Feature (green), Design (purple), Documentation (blue), Improvement (orange)
+Add / Edit / Delete labels
+Set default label colors
+
+--- PAGE 14 ---
+Export / Data Download
+Data Download
+User Reports: User list with activity metrics (CSV)
+Project Reports: Project list with completion stats (CSV)
+Task Reports: All tasks with status, assignee, dates (CSV)
+Format: CSV
+Filter Options:
+All time
+Custom date range
+Current filtered results
+Additional Questions (All Resolved)
+Required Clarifications
+# Question Answer
+1 Should there be a maximum number of projects
+per user? No limit
+2Should there be a maximum number of members
+per project? No limit
+3 Is the time tracking feature (logging hours per
+task) required for MVP?
+Yes - Time tracking included (start/stop
+timer + manual entry)
+4 Should deleted tasks be soft-deleted
+(recoverable) or hard-deleted?
+Soft delete - Tasks moved to Trash,
+recoverable for 30 days
+Recommended Clarifications
+# Question Answer
+1 Should team members be able to create tasks, or
+only project owners? Yes - Team Members can create tasks
+2Is sub-task support needed? Yes - Checklist-style sub-tasks with
+progress indicator
+3 Should there be a calendar view in addition to
+Kanban?
+Yes - Calendar View with month/week
+toggle
+4 Is guest access needed (view-only without
+account)? No - Not needed
+5Should offline mode support editing (drag cards) or
+only viewing? No offline editing - View only
+
+--- PAGE 15 ---
+Feature Change Log
+Version 1.1 (2026-02-09)
+Change Type Before After Source
+Feature
+Addition No time tracking Time Tracking Section added to Task
+Detail (start/stop timer + manual entry)
+Client
+Q&A
+Feature
+Addition No sub-tasks Sub-Tasks Section added to Task Detail
+(checklist with progress indicator)
+Client
+Q&A
+Feature
+Addition Board view only Calendar View added (month/week
+toggle, tasks on due dates)
+Client
+Q&A
+Permission
+Change
+Only Owner creates
+tasks Team Members can also create tasks Client
+Q&A
+Behavior
+Change Hard delete tasks Soft delete with 30-day Trash recovery Client
+Q&A
+Clarification No project/member
+limits defined
+No limits on projects per user or
+members per project
+Client
+Q&A
+Clarification Guest access
+undefined No guest access Client
+Q&A
+Clarification Offline editing
+undefined Offline viewing only, no editing Client
+Q&A
+Change Details
+Client Q&A Updates (v1.1)
+Source: Client answers to PRD clarification questions
+Changes:
+Added Time Tracking Section (Section 4 in Task Detail Page) with start/stop timer and
+manual time entry
+Added Sub-Tasks Section (Section 3 in Task Detail Page) with checkboxes and progress
+indicator
+Added Calendar View as Module 5 with month/week toggle, accessed via Board View
+header toggle
+Updated Team Member permissions to allow task creation and editing own tasks
+Changed task deletion to soft delete with Trash View (30-day recovery)
+Added Trash View Page accessible from Board View header
+Updated Permission Differences table with new capabilities
+No limits set for projects per user or members per project
+Version 1.0 (2026-02-09)
+Change Type Before After Source
+
+--- PAGE 16 ---
+Initial Version - Full PRD created TaskBoard training project generation
+Change Details
+Initial PRD Creation
+Source Document: TaskBoard_260209_190028.md (Training project)
+Change Description: Initial comprehensive PRD generated from random project generator with
+Level 3 (Medium) difficulty, Project Management domain
+UX Flow Improvement Suggestions
+UX flow issues identified during PRD creation:
+Suggestions
+# Current Flow Issue Suggestion Priority
+1 Team Member
+cannot create tasks
+RESOLVED: Team
+Members can now create
+tasks directly (v1.1)
+N/A Resolved
+2
+Board view is the
+only way to see all
+tasks
+No way to quickly see all
+tasks in a flat list sorted
+by deadline
+Add a "List View" toggle on
+the Board page for table-style
+task viewing with sorting
+Medium
+3 No quick way to
+find overdue tasks
+Owner must scroll
+through all columns to
+spot overdue cards
+Add a "Overdue" filter badge
+on the board header that
+highlights only overdue cards
+High
+4 File attachments
+lack preview
+Users must download
+files to see contents
+Add inline preview for images
+(PNG/JPG) and PDF first-page
+thumbnail
+Medium
+5
+No keyboard
+shortcuts for power
+users
+Dragging cards on
+desktop could be faster
+with shortcuts
+Add keyboard shortcuts: N
+(new task), arrow keys
+(navigate cards), Enter (open
+detail)
+Low
+6 Notifications page
+is a flat list
+All notification types
+mixed together makes it
+hard to find specific ones
+Add tab filters: All /
+Assignments / Comments /
+Deadlines
+Medium
+Suggestion Details
+Suggestion 1: Team Member Task Suggestions
+Current: Only Project Owner can create tasks. Team Members cannot add tasks even when they
+discover work items during development
+Issue: Creates a bottleneck where the Owner becomes a single point of task creation. Slows down
+workflow especially in async teams
+
+--- PAGE 17 ---
+Suggestion: Add "Suggest Task" button for Team Members. Creates a card with "Suggested"
+badge in the Backlog column. Owner receives notification and can approve (moves to board) or
+reject (with reason). This preserves Owner control while removing the bottleneck
+Expected Benefit: Faster task capture, reduced Owner bottleneck, better team autonomy
+Complexity: Medium
+Suggestion 2: List View Toggle
+Current: Tasks are only viewable in Kanban board layout (columns with cards)
+Issue: When a project has 30+ tasks, it's difficult to sort/filter across all columns. Finding a specific
+task requires scanning each column
+Suggestion: Add a toggle button on the Board page header: "Board View" / "List View". List View
+shows all tasks in a flat table with columns: Title, Status, Assignee, Priority, Due Date, Labels.
+Supports column sorting and filtering
+Expected Benefit: Faster task discovery, better overview for large projects, easier deadline
+management
+Complexity: Medium
+Suggestion 3: Overdue Task Highlighting
+Current: Overdue tasks only show a red due date text on individual cards. No global indicator on the
+board level
+Issue: With many cards across columns, it's easy to miss overdue tasks. Owner may not realize
+tasks are late until checking the dashboard
+Suggestion: Add a red "Overdue (N)" badge on the board header. Tapping it applies a filter that
+dims all non-overdue cards and highlights overdue ones with a red border. Push notification to
+Owner when a task becomes overdue
+Expected Benefit: Immediate visibility of deadline issues, faster intervention
+Complexity: Simple
+Suggestion 4: Inline File Preview
+Current: File attachments show as a list of file names. Users must download to view contents
+Issue: Extra friction for reviewing attached mockups, documents, or screenshots. Especially painful
+on mobile where downloads are inconvenient
+Suggestion: Show inline preview: Image files display as thumbnails (tap to expand full-screen). PDF
+files show first-page thumbnail. Other files show icon with file type label. Preview loads on demand
+to save bandwidth
+Expected Benefit: Faster file review, fewer unnecessary downloads, better mobile experience
+Complexity: Simple
+Suggestion 5: Keyboard Shortcuts (Desktop/Web)
+Current: All board interactions require mouse/touch (drag-and-drop, clicking buttons)
+Issue: Power users on desktop find mouse-only interaction slow for repetitive actions
+Suggestion: Add keyboard shortcuts for web view: N  = New task, Arrow keys  = Navigate
+between cards, Enter  = Open card detail, Esc  = Close detail, 1-4  = Move card to column 1-4.
+Show shortcut hint overlay with ?  key
+Expected Benefit: Faster workflow for desktop power users
+Complexity: Medium
+Suggestion 6: Categorized Notifications
+Current: All notifications in a single chronological list
+
+--- PAGE 18 ---
+Issue: Users receive mixed notifications (assignments, comments, deadlines, status changes)
+making it hard to find urgent items like deadline reminders among comment notifications
+Suggestion: Add tab filters at the top of Notifications page: All / Assignments / Comments /
+Deadlines. Each tab shows count badge. Deadline notifications have distinct red styling for urgency
+Expected Benefit: Faster access to important notifications, better signal-to-noise ratio
+Complexity: Simple
+

@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: taskboard-by-rumon-backend
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+    networks:
+      - taskboard-by-rumon-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: taskboard-by-rumon-frontend
+    restart: unless-stopped
+    ports:
+      - '5173:5173'
+    networks:
+      - taskboard-by-rumon-network
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: taskboard-by-rumon-dashboard
+    restart: unless-stopped
+    ports:
+      - '5174:5173'
+    networks:
+      - taskboard-by-rumon-network
+    # Serves all privileged roles via role-based routing (/admin/*)
+
+networks:
+  taskboard-by-rumon-network:
+    driver: bridge
