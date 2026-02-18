@@ -10,8 +10,11 @@ import {
     HttpCode,
     HttpStatus,
     ParseUUIDPipe,
+    UseInterceptors,
+    UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { BaseController } from 'src/core/base';
 import { ApiSwagger, Public, CurrentUser } from 'src/core/decorators';
 import { ResponsePayloadDto, SuccessResponseDto } from '@shared/dtos';
@@ -131,9 +134,15 @@ export class UserController extends BaseController<
      */
     @Patch('me')
     @HttpCode(HttpStatus.OK)
+    @UseInterceptors(FileInterceptor('avatar'))
+    @ApiConsumes('multipart/form-data')
     @ApiOperation({ summary: 'Update current user profile' })
-    async updateMe(@CurrentUser() user: any, @Body() body: any) {
-        const profile = await this.userService.updateProfile(user.id, body);
+    async updateMe(
+        @CurrentUser() user: any,
+        @Body() body: any,
+        @UploadedFile() file?: Express.Multer.File,
+    ) {
+        const profile = await this.userService.updateProfile(user.id, body, file);
         return new SuccessResponseDto(profile, 'Profile updated successfully');
     }
 

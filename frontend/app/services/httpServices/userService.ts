@@ -12,12 +12,15 @@ export const userService = {
   updateProfile: (data: UpdateProfileRequest) => {
     if (data.avatar) {
       const formData = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
-        if (value !== undefined) {
-          formData.append(key, value as string | Blob);
-        }
+      if (data.fullName !== undefined) formData.append('fullName', data.fullName);
+      if (data.jobTitle !== undefined) formData.append('jobTitle', data.jobTitle);
+      if (data.bio !== undefined) formData.append('bio', data.bio);
+      if (data.phone !== undefined) formData.append('phone', data.phone);
+      if (data.timezone !== undefined) formData.append('timezone', data.timezone);
+      formData.append('avatar', data.avatar);
+      return httpService.patch<UserProfile>('/users/me', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-      return httpService.patch<UserProfile>('/users/me', formData);
     }
     return httpService.patch<UserProfile>('/users/me', data);
   },

@@ -105,21 +105,27 @@ const DEFAULT_META = {
 };
 
 // ============================================================
-// Mini Line Chart (SVG) — matches HTML prototype style
+// Chart Grid Lines (HTML divs — matches prototype exactly)
 // ============================================================
 
-function MiniLineChart({
-  data,
-  color,
-  showArea,
-}: {
-  data: TrendPoint[];
-  color: string;
-  showArea?: boolean;
-}) {
-  const maxVal = Math.max(...data.map((d) => d.value), 1);
+function ChartGridLines() {
+  return (
+    <div className="absolute inset-0 flex flex-col justify-between">
+      <div className="border-b border-dashed border-[#E5E7EB] w-full h-0" />
+      <div className="border-b border-dashed border-[#E5E7EB] w-full h-0" />
+      <div className="border-b border-dashed border-[#E5E7EB] w-full h-0" />
+      <div className="border-b border-dashed border-[#E5E7EB] w-full h-0" />
+      <div className="border-b border-[#E5E7EB] w-full h-0" />
+    </div>
+  );
+}
 
-  // Build smooth curve path using cubic bezier
+// ============================================================
+// Helper: build smooth cubic bezier path from data
+// ============================================================
+
+function buildCurvePath(data: TrendPoint[]) {
+  const maxVal = Math.max(...data.map((d) => d.value), 1);
   const points = data.map((d, i) => ({
     x: (i / Math.max(data.length - 1, 1)) * 100,
     y: 40 - (d.value / maxVal) * 35,
@@ -137,72 +143,92 @@ function MiniLineChart({
     }
   }
 
-  const areaD = pathD
-    ? `${pathD} L${points[points.length - 1].x},40 L${points[0].x},40 Z`
-    : "";
+  return { points, pathD };
+}
+
+// ============================================================
+// Line Chart with Dots (User Registration Trend)
+// ============================================================
+
+function LineChartWithDots({ data }: { data: TrendPoint[] }) {
+  const { points, pathD } = buildCurvePath(data);
 
   return (
-    <svg
-      viewBox="0 0 100 40"
-      className={`w-full h-full absolute inset-0 ${color}`}
-      preserveAspectRatio="none"
-    >
-      {/* Grid lines */}
-      {[0, 1, 2, 3].map((i) => (
-        <line
-          key={i}
-          x1="0"
-          y1={i * 10}
-          x2="100"
-          y2={i * 10}
-          stroke="#E5E7EB"
-          strokeWidth="0.5"
-          strokeDasharray="2,2"
+    <div className="flex-1 w-full relative">
+      <ChartGridLines />
+      <svg
+        viewBox="0 0 100 40"
+        className="w-full h-full absolute inset-0 text-[#4A90D9]"
+        preserveAspectRatio="none"
+      >
+        <path
+          d={pathD}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
           vectorEffect="non-scaling-stroke"
         />
-      ))}
-      <line
-        x1="0"
-        y1="40"
-        x2="100"
-        y2="40"
-        stroke="#E5E7EB"
-        strokeWidth="0.5"
-        vectorEffect="non-scaling-stroke"
-      />
+        {/* Dots on interior points only */}
+        {points
+          .filter((_, i) => i > 0 && i < points.length - 1)
+          .map((p, i) => (
+            <circle
+              key={i}
+              cx={p.x}
+              cy={p.y}
+              r="3"
+              className="fill-white stroke-current"
+              strokeWidth="2"
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+      </svg>
+    </div>
+  );
+}
 
-      {/* Area fill */}
-      {showArea && areaD && (
-        <path d={areaD} fill="currentColor" className="opacity-5" />
-      )}
+// ============================================================
+// Area Chart without Dots (Task Completion Rate)
+// ============================================================
 
-      {/* Line */}
-      <path
-        d={pathD}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-      />
+function AreaChart({ data }: { data: TrendPoint[] }) {
+  const { pathD } = buildCurvePath(data);
+  const lastPoint = data.length - 1;
+  const maxVal = Math.max(...data.map((d) => d.value), 1);
+  const lastX = (lastPoint / Math.max(data.length - 1, 1)) * 100;
+  const areaD = pathD ? `${pathD} L${lastX},40 L0,40 Z` : "";
 
-      {/* Dots on key points */}
-      {points
-        .filter((_, i) => i > 0 && i < points.length - 1)
-        .map((p, i) => (
-          <circle
-            key={i}
-            cx={p.x}
-            cy={p.y}
-            r="3"
-            fill="white"
-            stroke="currentColor"
-            strokeWidth="2"
-            vectorEffect="non-scaling-stroke"
+  return (
+    <div className="flex-1 w-full relative">
+      <ChartGridLines />
+      <svg
+        viewBox="0 0 100 40"
+        className="w-full h-full absolute inset-0 text-[#8B5CF6]"
+        preserveAspectRatio="none"
+      >
+        {/* Area fill — very subtle 5% opacity */}
+        {areaD && (
+          <path
+            d={areaD}
+            fill="#8B5CF6"
+            fillOpacity="0.05"
+            stroke="none"
           />
-        ))}
-    </svg>
+        )}
+        {/* Line */}
+        <path
+          d={pathD}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+    </div>
   );
 }
 
@@ -220,13 +246,13 @@ function MiniBarChart({ data }: { data: TrendPoint[] }) {
         return (
           <div
             key={bar.date}
-            className="w-full rounded-t-sm relative group"
+            className="w-full bg-emerald-500/10 rounded-t-sm hover:bg-emerald-500/20 transition-colors relative group"
             style={{ height: `${heightPct}%` }}
           >
             <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-[#1E293B] text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
               {bar.value}
             </div>
-            <div className="w-full h-full bg-emerald-500 rounded-t-sm opacity-80 hover:opacity-100 transition-opacity" />
+            <div className="w-full h-full bg-emerald-500 rounded-t-sm opacity-80" />
           </div>
         );
       })}
@@ -428,12 +454,7 @@ export default function AdminDashboard() {
             </div>
           ) : stats?.userRegistrationTrend?.length ? (
             <>
-              <div className="flex-1 w-full relative">
-                <MiniLineChart
-                  data={stats.userRegistrationTrend}
-                  color="text-[#4A90D9]"
-                />
-              </div>
+              <LineChartWithDots data={stats.userRegistrationTrend} />
               <div className="flex justify-between text-[10px] text-[#94A3B8] mt-2 px-1">
                 {stats.userRegistrationTrend.map((t, i) => (
                   <span key={i}>{t.label}</span>
@@ -503,13 +524,7 @@ export default function AdminDashboard() {
             </div>
           ) : stats?.taskCreationTrend?.length ? (
             <>
-              <div className="flex-1 w-full relative">
-                <MiniLineChart
-                  data={stats.taskCreationTrend}
-                  color="text-[#8B5CF6]"
-                  showArea
-                />
-              </div>
+              <AreaChart data={stats.taskCreationTrend} />
               <div className="flex justify-between text-[10px] text-[#94A3B8] mt-2 px-1">
                 <span>00:00</span>
                 <span>06:00</span>
