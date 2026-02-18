@@ -21,7 +21,7 @@ services:
     container_name: taskboard-by-rumon-frontend
     restart: unless-stopped
     ports:
-      - '5173:5173'
+      - '5173:3000'
     networks:
       - taskboard-by-rumon-network
 
