@@ -2,6 +2,7 @@ import { Injectable, ConflictException, NotFoundException } from '@nestjs/common
 import { DataSource } from 'typeorm';
 import { BaseService } from 'src/core/base';
 import { I18nHelper, PasswordUtil } from 'src/core/utils';
+import { S3Service } from 'src/infrastructure/s3/s3.service';
 import { User } from './user.entity';
 import { UserRepository } from './user.repository';
 import { CreateUserDto, UpdateUserDto } from './dtos';
@@ -14,6 +15,7 @@ export class UserService extends BaseService<User> {
         private readonly userRepository: UserRepository,
         private readonly i18nHelper: I18nHelper,
         private readonly dataSource: DataSource,
+        private readonly s3Service: S3Service,
     ) {
         super(userRepository, 'User');
     }
@@ -128,7 +130,9 @@ export class UserService extends BaseService<User> {
             id: user.id,
             fullName: user.name,
             email: user.email,
-            avatar: user.profilePhotoUrl || undefined,
+            avatar: user.profilePhotoUrl
+                ? await this.s3Service.getPresignedUrl(user.profilePhotoUrl)
+                : undefined,
             jobTitle: user.jobTitle || undefined,
             role: user.role === UserRole.ADMIN ? 'admin' : 'user',
             status: user.isActive ? 'active' : 'suspended',
@@ -145,17 +149,34 @@ export class UserService extends BaseService<User> {
     /**
      * Update current user profile
      */
-    async updateProfile(userId: string, data: {
-        fullName?: string;
-        jobTitle?: string;
-        bio?: string;
-        phone?: string;
-        timezone?: string;
-    }) {
+    async updateProfile(
+        userId: string,
+        data: {
+            fullName?: string;
+            jobTitle?: string;
+            bio?: string;
+            phone?: string;
+            timezone?: string;
+        },
+        file?: Express.Multer.File,
+    ) {
         const user = await this.findByIdOrFail(userId);
 
         if (data.fullName !== undefined) user.name = data.fullName;
         if (data.jobTitle !== undefined) user.jobTitle = data.jobTitle;
+
+        if (file) {
+            // Delete old photo from S3 if exists
+            if (user.profilePhotoUrl) {
+                try {
+                    await this.s3Service.deleteFile(user.profilePhotoUrl);
+                } catch {
+                    // Ignore deletion errors for old file
+                }
+            }
+            const s3Key = await this.s3Service.uploadFile(file, 'profile-photos');
+            user.profilePhotoUrl = s3Key;
+        }
 
         const saved = await this.dataSource.getRepository(User).save(user);
 
@@ -163,7 +184,9 @@ export class UserService extends BaseService<User> {
             id: saved.id,
             fullName: saved.name,
             email: saved.email,
-            avatar: saved.profilePhotoUrl || undefined,
+            avatar: saved.profilePhotoUrl
+                ? await this.s3Service.getPresignedUrl(saved.profilePhotoUrl)
+                : undefined,
             jobTitle: saved.jobTitle || undefined,
             role: saved.role === UserRole.ADMIN ? 'admin' : 'user',
             status: saved.isActive ? 'active' : 'suspended',
