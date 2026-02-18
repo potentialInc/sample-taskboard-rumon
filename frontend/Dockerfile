@@ -4,8 +4,8 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 # Copy package.json and package-lock.json to the working directory
 COPY package*.json ./
-# Install application dependencies
-RUN npm install 
+# Install application dependencies (remove lockfile to resolve correct platform-specific deps)
+RUN rm -f package-lock.json && npm install
 # Copy the rest of the application code to the working directory
 COPY . .
 # Build the React application for production
