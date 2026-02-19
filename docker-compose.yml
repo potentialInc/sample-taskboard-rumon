@@ -18,6 +18,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:3000/api}
     container_name: taskboard-by-rumon-frontend
     restart: unless-stopped
     ports:
@@ -29,6 +31,8 @@ services:
     build:
       context: ./dashboard
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:3000/api}
     container_name: taskboard-by-rumon-dashboard
     restart: unless-stopped
     ports:

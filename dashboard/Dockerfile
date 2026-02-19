@@ -8,6 +8,9 @@ COPY package*.json ./
 RUN rm -f package-lock.json && npm install
 # Copy the rest of the application code to the working directory
 COPY . .
+# Accept API URL as build argument (passed from docker-compose.yml)
+ARG VITE_API_URL=http://localhost:3000/api
+ENV VITE_API_URL=$VITE_API_URL
 # Build the React application for production
 RUN npm run build
 RUN npm install -g pm2

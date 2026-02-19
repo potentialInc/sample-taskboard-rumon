@@ -1,3 +1,6 @@
+# Root .env (production config for docker-compose)
+.env
+
 # Claude Code secrets (keep .gitkeep)
 .claude-project/secrets/*
 !.claude-project/secrets/.gitkeep
