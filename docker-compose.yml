@@ -32,7 +32,7 @@ services:
     container_name: taskboard-by-rumon-dashboard
     restart: unless-stopped
     ports:
-      - '5174:5173'
+      - '5174:3000'
     networks:
       - taskboard-by-rumon-network
     # Serves all privileged roles via role-based routing (/admin/*)
