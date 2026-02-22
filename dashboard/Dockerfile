@@ -8,6 +8,9 @@ COPY package*.json ./
 RUN npm install 
 # Copy the rest of the application code to the working directory
 COPY . .
+# Accept build-time API URL from docker-compose / Docploy
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 # Build the React application for production
 RUN npm run build
 RUN npm install -g pm2
