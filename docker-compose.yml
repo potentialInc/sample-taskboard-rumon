@@ -8,7 +8,7 @@ services:
     container_name: taskboard-by-rumon-backend
     restart: unless-stopped
     ports:
-      - '3000:3001'
+      - '3000:3000'
     environment:
       - NODE_ENV=${NODE_ENV:-development}
     networks:
@@ -18,12 +18,10 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:3000/api}
     container_name: taskboard-by-rumon-frontend
     restart: unless-stopped
     ports:
-      - '5173:3000'
+      - '5173:5173'
     networks:
       - taskboard-by-rumon-network
 
@@ -31,12 +29,10 @@ services:
     build:
       context: ./dashboard
       dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:3000/api}
     container_name: taskboard-by-rumon-dashboard
     restart: unless-stopped
     ports:
-      - '5174:3000'
+      - '5174:5173'
     networks:
       - taskboard-by-rumon-network
     # Serves all privileged roles via role-based routing (/admin/*)
