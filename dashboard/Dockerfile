@@ -5,8 +5,7 @@ WORKDIR /app
 # Copy package.json and package-lock.json to the working directory
 COPY package*.json ./
 # Install application dependencies
-# Remove package-lock to avoid npm optional dependency bug with rollup on Alpine/musl
-RUN rm -f package-lock.json && npm install
+RUN npm install 
 # Copy the rest of the application code to the working directory
 COPY . .
 # Build the React application for production

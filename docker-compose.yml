@@ -18,6 +18,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: https://taskboard-backend.potentialai.dev/api
     container_name: taskboard-by-rumon-frontend
     restart: unless-stopped
     ports:
@@ -29,6 +31,8 @@ services:
     build:
       context: ./dashboard
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: https://taskboard-backend.potentialai.dev/api
     container_name: taskboard-by-rumon-dashboard
     restart: unless-stopped
     ports:
